@@ -6,7 +6,7 @@ on:
 
 env:
   [cite_start]AZURE_WEBAPP_NAME: 'st709-webapp' # 본인의 Azure 웹앱 이름으로 수정! [cite: 24, 233]
-  DOCKER_IMAGE_NAME: 'node-app'                  # 레포지토리에 저장될 이미지 이름
+  DOCKER_IMAGE_NAME: 'node-app'                  
 
 jobs:
   build-and-deploy:
