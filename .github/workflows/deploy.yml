@@ -1,0 +1,58 @@
+name: Multi-Registry CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  [cite_start]AZURE_WEBAPP_NAME: 'st709-webapp' # 본인의 Azure 웹앱 이름으로 수정! [cite: 24, 233]
+  DOCKER_IMAGE_NAME: 'node-app'                  # 레포지토리에 저장될 이미지 이름
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      [cite_start]uses: actions/checkout@v4 [cite: 44]
+
+    # 1. Docker Hub 로그인 [cite: 45]
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # 2. Azure ACR 로그인 [cite: 45]
+    - name: Log in to Azure Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    # 3. Docker Buildx 설정 (멀티 태깅 및 빌드 최적화)
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # 4. 이미지 빌드 및 두 곳의 레지스트리에 동시 Push [cite: 47]
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+          ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    # 5. Azure App Service에 자동 배포 지시 [cite: 51]
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        images: '${{ secrets.ACR_LOGIN_SERVER }}/${{ env.DOCKER_IMAGE_NAME }}:latest'
