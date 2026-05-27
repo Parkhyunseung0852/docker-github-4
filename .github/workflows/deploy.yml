@@ -5,24 +5,24 @@ on:
     branches: [ "main" ]
 
 env:
-  [cite_start]AZURE_WEBAPP_NAME: 'st709-webapp' # 본인의 Azure 웹앱 이름으로 수정! [cite: 24, 233]
-  DOCKER_IMAGE_NAME: 'node-app'                  
+  AZURE_WEBAPP_NAME: 'st709-webapp' # ★본인의 Azure 웹앱 이름으로 수정!
+  DOCKER_IMAGE_NAME: 'node-app'                  # 레포지토리에 저장될 이미지 이름
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      [cite_start]uses: actions/checkout@v4 [cite: 44]
+      uses: actions/checkout@v4
 
-    # 1. Docker Hub 로그인 [cite: 45]
+    # 1. Docker Hub 로그인
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 2. Azure ACR 로그인 [cite: 45]
+    # 2. Azure ACR 로그인
     - name: Log in to Azure Container Registry
       uses: docker/login-action@v3
       with:
@@ -34,7 +34,7 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    # 4. 이미지 빌드 및 두 곳의 레지스트리에 동시 Push [cite: 47]
+    # 4. 이미지 빌드 및 두 곳의 레지스트리에 동시 Push
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -49,7 +49,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    # 5. Azure App Service에 자동 배포 지시 [cite: 51]
+    # 5. Azure App Service에 자동 배포 지시
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
